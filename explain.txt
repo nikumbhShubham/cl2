@@ -1,0 +1,1618 @@
+BI1
+🧬 Core Biological Concepts
+Before diving into the code, it's essential to understand the biology it's modeling:
+
+DNA Sequence: Deoxyribonucleic acid is the molecule of life, represented as a string of four bases: Adenine, Thymine, Cytosine, and Guanine.
+
+Motif: A short, recurring pattern in a DNA sequence that often has a biological function. For example, "ATG" is the most common "start" motif, signaling where to begin building a protein.
+
+GC Content: The percentage of a DNA sequence that is composed of either Guanine (G) or Cytosine (C). High GC content can affect the stability of the DNA double helix.
+
+Gene (Coding Region): A gene is a segment of DNA that provides instructions for building a functional product, usually a protein. The coding region (or Open Reading Frame, ORF) is the specific part of the gene that is read and translated.
+
+Codons: The "words" of the genetic code. The DNA sequence is read in non-overlapping groups of three bases called codons.
+
+Start Codon (ATG): This codon signals the start of translation. It also codes for the amino acid Methionine (M).
+
+Stop Codons (TAA, TAG, TGA): These three codons signal the end of translation. They do not code for an amino acid but simply tell the cellular machinery to stop.
+
+Translation: The process of converting a DNA (or mRNA) sequence into a protein. The sequence of codons is read, and for each codon, a corresponding amino acid is added to a growing chain. This chain of amino acids folds into a protein.
+
+🐍 Core Programming Concepts
+Biopython: A large, open-source Python library used for computational biology. It provides tools and objects to work with biological data, like sequences.
+
+Seq Object: The "killer feature" of Biopython. It looks and acts like a standard Python string (you can slice it, find its length, etc.), but it has special biological methods built-in, such as .translate(), .transcribe(), and .complement().
+
+List Comprehension: A concise, "Pythonic" way to create a list. The syntax [expression for item in list if condition] is a powerful alternative to a traditional for loop.
+
+String/Sequence Slicing: Using bracket notation like sequence[i:i+3] to extract a portion (a "slice") of the sequence. This is the primary way to "move" along the DNA strand.
+
+Reading Frame: The "phase" in which you read a sequence in groups of three. The range(start, end, 3) in your code is what establishes the correct reading frame.
+
+💻 Line-by-Line Code Explanation
+Here is a detailed breakdown of each part of your script.
+
+Python
+
+from Bio.Seq import Seq
+from Bio.SeqUtils import gc_fraction
+from Bio.Seq import Seq: This imports the Seq class from the Bio.Seq module. You use this class to create special sequence objects that "understand" biology, distinguishing them from plain Python strings.
+
+from Bio.SeqUtils import gc_fraction: This imports a specific helper function named gc_fraction from the Bio.SeqUtils (Sequence Utilities) module. This function is pre-built to accurately calculate the GC content of a sequence.
+
+Python
+
+# DNA sequence (changed)
+sequence = Seq("ATGCTGACCGTATGCCGGTGATAA")
+sequence = Seq(...): This is the first key step.
+
+You define a standard Python string: "ATGCTGACCGTATGCCGGTGATAA".
+
+You pass this string to the Seq() class constructor.
+
+The result is a Seq object stored in the sequence variable. Now, you can call special methods on this variable, like sequence.translate().
+
+1. Finding Motifs
+Python
+
+# 1. Finding motifs
+motif = "ATG"
+motif = "ATG": You define a simple string variable motif to hold the pattern you're searching for. Using a variable makes the code cleaner and easier to change later.
+
+Python
+
+positions = [i + 1 for i in range(len(sequence) - len(motif) + 1) if sequence[i:i+len(motif)] == motif]
+This is a list comprehension and the most complex programming line in the script. Let's break it down from the inside out:
+
+len(sequence) is 24.
+
+len(motif) is 3.
+
+range(len(sequence) - len(motif) + 1): This becomes range(24 - 3 + 1), which is range(22). This generates a sequence of numbers from 0 to 21. This range represents every possible starting index for a 3-letter motif. The last possible start is index 21, which corresponds to the slice sequence[21:24].
+
+for i in ...: This is the loop. i will take on the values 0, 1, 2, 3, ... all the way to 21.
+
+if sequence[i:i+len(motif)] == motif: This is the filter, which implements a "sliding window."
+
+When i = 0: Is sequence[0:3] ("ATG") == "ATG"? Yes.
+
+When i = 1: Is sequence[1:4] ("TGC") == "ATG"? No.
+
+When i = 2: Is sequence[2:5] ("GCT") == "ATG"? No.
+
+... (this continues) ...
+
+When i = 12: Is sequence[12:15] ("ATG") == "ATG"? Yes.
+
+... (this continues to i = 21) ...
+
+[i + 1 ...]: This is the output expression. If the if condition is True, this value is added to the new list.
+
+You add i + 1 because programmers count from 0 (0-based indexing), but biologists conventionally count from 1 (1-based indexing).
+
+When the loop finds a match at index i = 0, it adds 0 + 1 = 1 to the list.
+
+When it finds a match at index i = 12, it adds 12 + 1 = 13 to the list.
+
+Result: The positions variable becomes the list [1, 13].
+
+Python
+
+print("Motif positions:", positions)
+Output: Motif positions: [1, 13]
+
+2. Calculating GC Content
+Python
+
+# 2. Calculating GC content (using Biopython)
+GC_content = gc_fraction(sequence)
+GC_content = gc_fraction(sequence): You call the gc_fraction function you imported earlier and pass it your entire Seq object.
+
+In-depth: The function iterates through the 24 bases of sequence. It counts 6 'G's and 4 'C's.
+
+Total G+C = 10
+
+Total length = 24
+
+It calculates the fraction: 10 / 24 = 0.41666...
+
+The GC_content variable now holds the float value 0.4166666666666667.
+
+Python
+
+print("GC Content: {:.2f}%".format(GC_content * 100))
+GC_content * 100: First, you convert the fraction (0.41666...) to a percentage (41.666...).
+
+"{:.2f}%".format(...): This is a string formatting method.
+
+{} is a placeholder.
+
+: begins the format specification.
+
+.2f means "format this number as a float, rounded to .2 decimal places."
+
+Output: GC Content: 41.66%
+
+3. Identifying and Translating the Coding Region
+Python
+
+# 3. Identifying coding region (translate to protein)
+start = sequence.find("ATG")
+start = sequence.find("ATG"): This uses the .find() method (which Seq objects have, just like strings) to find the 0-based index of the first occurrence of "ATG".
+
+In your sequence "ATGCTG...", "ATG" is found right at the beginning.
+
+The start variable is set to 0. (If "ATG" were not found, it would be set to -1).
+
+Python
+
+stop_codons = ["TAA", "TAG", "TGA"]
+coding_region = ""
+stop_codons = [...]: You create a list of the three stop codons to easily check against it.
+
+coding_region = "": You initialize an empty string. This variable will hold the valid gene sequence (from start to stop codon) if we find one.
+
+Python
+
+if start != -1:
+if start != -1:: This is a crucial check. It means, "If we actually found a start codon..." Since start is 0, this condition is True, and the code block inside the if statement will run.
+
+Python
+
+    for i in range(start + 3, len(sequence), 3):
+This is the in-frame codon loop. It's designed to read the sequence one codon (3 bases) at a time, after the start codon.
+
+start + 3: The loop starts at index 3 (i.e., 0 + 3). This skips the start codon "ATG" itself and begins at the next codon, "CTG".
+
+len(sequence): The loop will run up to (but not including) the end of the sequence (index 24).
+
+3: This is the step. Instead of i becoming 3, 4, 5..., it becomes 3, 6, 9, 12, 15, 18, 21. This ensures you are always looking at the start of a new codon.
+
+Python
+
+        if sequence[i:i+3] in stop_codons:
+if ...: This line checks if the current codon is a stop codon.
+
+Loop Walkthrough:
+
+i = 3: sequence[3:6] is "CTG". Is "CTG" in stop_codons? No.
+
+i = 6: sequence[6:9] is "ACC". Is "ACC" in stop_codons? No.
+
+i = 9: sequence[9:12] is "GTA". Is "GTA" in stop_codons? No.
+
+i = 12: sequence[12:15] is "TGC". Is "TGC" in stop_codons? No.
+
+i = 15: sequence[15:18] is "CGG". Is "CGG" in stop_codons? No.
+
+i = 18: sequence[18:21] is "TGA". Is "TGA" in stop_codons? Yes.
+
+Python
+
+            coding_region = sequence[start:i+3]
+            break
+Because the if condition was met at i = 18:
+
+coding_region = sequence[start:i+3]: This line sets the coding_region.
+
+start is 0.
+
+i + 3 is 18 + 3 = 21.
+
+The slice sequence[0:21] is extracted. This is "ATGCTGACCGTATGCGGGTGA".
+
+This slice correctly includes everything from the start codon up to and including the stop codon.
+
+break: This command immediately exits the for loop. We've found our gene; there's no need to keep searching for more stop codons.
+
+Python
+
+print("Coding Region:", coding_region)
+Output: Coding Region: ATGCTGACCGTATGCGGGTGA
+
+Translating the Protein
+Python
+
+# Translating coding region into protein sequence
+if coding_region:
+if coding_region:: In Python, a non-empty string evaluates to True. Since coding_region is now "ATG...", this is True, and the code block runs. (If no stop codon had been found, coding_region would still be "" and this block would be skipped).
+
+Python
+
+    protein = Seq(coding_region).translate()
+This is the biological magic line.
+
+Seq(coding_region): First, you must convert your plain Python coding_region string back into a Seq object.
+
+.translate(): You then call the .translate() method on this new Seq object. Biopython reads the sequence codon by codon ("ATG", "CTG", "ACC", ...) and converts each one to its corresponding one-letter amino acid code.
+
+ATG -> M (Methionine)
+
+CTG -> L (Leucine)
+
+ACC -> T (Threonine)
+
+GTA -> V (Valine)
+
+TGC -> C (Cysteine)
+
+CGG -> R (Arginine)
+
+TGA -> * (Stop Codon)
+
+The protein variable becomes a new Seq object holding the string "MLTVCR*".
+
+Python
+
+    print("Protein Sequence:", protein)
+Output: Protein Sequence: MLTVCR* (The asterisk * is the standard symbol for a stop codon in a protein sequence).
+
+Python
+
+else:
+    print("No valid coding region found.")
+else:: This block is skipped because the if coding_region: condition was True.
+
+
+
+
+
+
+
+BI2
+This is an excellent notebook that demonstrates a complete, end-to-end workflow for a standard RNA-seq differential expression (DE) analysis. It covers loading data, statistical analysis, and the two most common visualizations: a volcano plot and a PCA plot.
+
+Here is a detailed, in-depth explanation of the code, the concepts, and the "why" behind each step.
+
+🔬 High-Level Biological & Statistical Concepts
+Before we go line-by-line, let's understand the goal of this notebook.
+
+The Biology (RNA-seq): This code analyzes data from an RNA-sequencing (RNA-seq) experiment. This experiment measures the amount of RNA for every gene in a cell. The amount of RNA (the "expression level") tells us how active a gene is.
+
+The Data: The experiment's output is a "counts matrix." This is a table where rows are your samples (e.g., sample1, sample2) and columns are your genes (e.g., gene1, gene2). The numbers inside (e.g., 12, 21, 4) are the "raw counts"—the number of times an RNA molecule from that gene was sequenced.
+
+The Goal: We have two groups of samples: "Control" and "Treatment." We want to find which genes are differentially expressed—that is, which genes' activity levels (counts) change significantly because of the treatment.
+
+The Statistics (DESeq2): You can't just compare the raw counts. A sample might have double the counts just because it was sequenced twice as much (this is called "sequencing depth").
+
+DESeq2 (here, the Python port pydeseq2) is a very popular statistical package designed specifically for this. It does three critical things:
+
+Normalization: It calculates "size factors" to account for these differences in sequencing depth.
+
+Dispersion Estimation: It models the variance (or "dispersion") of gene expression. This is its secret sauce, allowing it to "borrow" information across all genes to get a reliable variance estimate even for genes with low counts.
+
+Statistical Testing: It runs a test (a Wald test) on each gene to determine if the change in expression between "Control" and "Treatment" is statistically significant.
+
+💻 Line-by-Line Code Explanation
+Here is the breakdown of each cell from your notebook.
+
+Cell 1: Import Libraries
+Python
+
+# Import required libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.decomposition import PCA
+import numpy as np  # needed for -np.log10
+
+# PyDESeq2 (DESeq2 implementation in Python)
+from pydeseq2.utils import load_example_data
+from pydeseq2.dds import DeseqDataSet
+from pydeseq2.ds import DeseqStats  # updated import for v0.5.2
+import pandas as pd: Imports the Pandas library, the standard tool for working with data tables (called DataFrames) in Python.
+
+import matplotlib.pyplot as plt: Imports Matplotlib, the foundational plotting library in Python.
+
+import seaborn as sns: Imports Seaborn, another plotting library built on top of Matplotlib. It makes creating complex, attractive statistical plots (like scatter plots) much easier.
+
+from sklearn.decomposition import PCA: From the scikit-learn library (the main machine learning library), this imports the Principal Component Analysis (PCA) tool. We'll use this for our QC plot.
+
+import numpy as np: Imports NumPy, the core library for numerical operations. We specifically need it for the np.log10 function to create the volcano plot.
+
+from pydeseq2.utils import load_example_data: Imports a helper function from pydeseq2 that simply loads a built-in dataset. This is so the notebook can run without you needing to provide your own files.
+
+from pydeseq2.dds import DeseqDataSet: This is a key pydeseq2 import. It's the class that creates the main DESeq2 object (often called dds). This object will store our counts, our metadata, and all the intermediate statistical calculations.
+
+from pydeseq2.ds import DeseqStats: This imports the class needed to run the final statistical test and extract the results.
+
+Cell 2: Load and Prepare Data
+Python
+
+# Load counts (genes = columns, samples = rows)
+counts_df = load_example_data()
+
+# Create metadata (half Control, half Treatment)
+metadata_df = pd.DataFrame({
+    "condition": ["Control"] * (counts_df.shape[0] // 2) + ["Treatment"] * (counts_df.shape[0] - counts_df.shape[0] // 2)
+}, index=counts_df.index)  # samples as index
+
+print("Counts data:")
+print(counts_df.head())
+
+print("\nMetadata:")
+print(metadata_df.head())
+counts_df = load_example_data(): This line loads the example "counts matrix" into a Pandas DataFrame called counts_df. As the output shows, rows are samples (sample1, sample2...) and columns are genes (gene1, gene2...).
+
+metadata_df = pd.DataFrame(...): This creates the second, crucial table: the metadata. This table tells the program what group each sample belongs to.
+
+"condition": [...]: This creates a single column named "condition."
+
+["Control"] * (counts_df.shape[0] // 2): This takes the total number of rows (samples) in counts_df, divides it by 2 (// 2), and creates a list of "Control" strings of that length.
+
++ ["Treatment"] * (...): It does the same for the remaining samples, labeling them "Treatment."
+
+index=counts_df.index: This is the most important part. It ensures that the row names (the "index") of our metadata_df are exactly the same as the row names of counts_df. This is how pydeseq2 knows that sample1 belongs to the "Control" group.
+
+print(...): These lines simply print the first 5 rows (.head()) of each DataFrame so you can see that the data loaded correctly.
+
+Cell 3: Build and Run the DESeq2 Pipeline
+Python
+
+# ===============================_
+# 2. Build DESeq2 Dataset
+# ===============================_
+
+dds = DeseqDataSet(
+    counts=counts_df,
+    metadata=metadata_df,        # now has same number of rows as samples
+    design_factors="condition"
+)
+
+# Run the DESeq2 pipeline
+dds.deseq2()
+dds = DeseqDataSet(...): This is where we initialize the main DeseqDataSet object.
+
+counts=counts_df: We pass it our raw count data.
+
+metadata=metadata_df: We pass it our experimental design (the metadata).
+
+design_factors="condition": This is the statistical formula. We are telling pydeseq2, "The factor I want to test is in the column named 'condition'." This is our independent variable.
+
+dds.deseq2(): This is the "magic" line. It executes the entire core DESeq2 statistical pipeline. The text in the output shows you exactly what it's doing:
+
+Fitting size factors...: Normalization. It's calculating the scaling factors for each sample to correct for sequencing depth.
+
+Fitting dispersions...: Variance modeling. It's estimating the variance (dispersion) for each gene.
+
+Fitting dispersion trend curve...: It models the relationship between a gene's average expression and its variance.
+
+Fitting MAP dispersions...: It refines the dispersion estimates using a Bayesian approach, "shrinking" them to the trended curve. This gives more stable and reliable variance estimates.
+
+Fitting LFCs...: It calculates the Log2 Fold Change (LFC) for the "condition" variable for every gene.
+
+Calculating cook's distance...: This is an advanced QC step to find outlier genes that might be skewing the results.
+
+Cell 4: Differential Expression Analysis & Results
+Python
+
+# ===============================_
+# 3. Differential Expression Analysis
+# ===============================_
+# Compare Treatment vs Control
+stat_res = DeseqStats(dds, contrast=["condition", "Treatment", "Control"])
+stat_res.summary()  # prints result summary
+
+# Get results as a DataFrame
+results_df = stat_res.results_df
+print("\nDifferential Expression Results (first 10 rows):")
+print(results_df.head(10))
+stat_res = DeseqStats(dds, ...): Now that the model is built, we use DeseqStats to run the specific statistical test we want.
+
+contrast=["condition", "Treatment", "Control"]: This is the key. We are telling it to use the "condition" column and to compare "Treatment" vs. "Control". This will calculate the Log2 Fold Change as log2(Treatment / Control).
+
+stat_res.summary(): This runs the Wald Test for every gene and prints the summary (which you see in the output). This test determines if the calculated log2FoldChange is statistically significant (i.e., different from zero).
+
+results_df = stat_res.results_df: We extract the final results into a new DataFrame. This is the table we'll use for plotting.
+
+print(results_df.head(10)): This prints the results table. Here is what the columns mean:
+
+baseMean: The average normalized count for the gene across all samples.
+
+log2FoldChange: The effect size. A value of +1 means a 2-fold increase in the Treatment group. A value of -2 means a 4-fold decrease (2^-2 = 1/4).
+
+lfcSE: The standard error of the log2FoldChange, a measure of its uncertainty.
+
+stat: The Wald statistic (essentially log2FoldChange / lfcSE).
+
+pvalue: The raw significance. The probability of seeing this log2FoldChange (or one more extreme) just by chance. A low p-value (e.g., 0.01) means it's unlikely to be chance.
+
+padj: The adjusted p-value. This is the most important value. When you test 10,000 genes, you'll get some low p-values by chance (this is the "multiple testing problem"). This padj (p-adjusted) value corrects for this. You should always use padj (also called FDR) for your significance cutoff (e.g., padj < 0.05).
+
+Cell 5: Volcano Plot
+This plot is the standard way to visualize DE results. It plots effect size (magnitude) vs. statistical significance.
+
+Python
+
+# ===============================_
+# 4. Volcano Plot
+# ===============================_
+plt.figure(figsize=(10, 6))
+sns.scatterplot(
+    data=results_df,
+    x="log2FoldChange", 
+    y=-np.log10(results_df["pvalue"]),
+    hue=results_df["padj"] < 0.05,
+    palette={True: "red", False: "grey"},
+    alpha=0.7
+)
+
+# Add cutoffs
+plt.axhline(-np.log10(0.05), color="blue", linestyle="--", label="p = 0.05")
+plt.axvline(-1, color="green", linestyle="--", label="log2FC = -1")
+plt.axvline(1, color="green", linestyle="--", label="log2FC = +1")
+
+# ... (labels and title)
+plt.show()
+sns.scatterplot(...): Creates the plot. Each dot is one gene.
+
+x="log2FoldChange": The x-axis is the log2FoldChange. Genes to the far right are strongly up-regulated (increased expression). Genes to the far left are strongly down-regulated (decreased expression).
+
+y=-np.log10(results_df["pvalue"]): The y-axis is the significance. We use -np.log10 because it "flips" and stretches the p-value. A low p-value (e.g., 0.01) becomes a high -log10 value (2). This way, higher up on the plot means more significant.
+
+hue=results_df["padj"] < 0.05: This is how we color the dots. hue sets the color based on a condition. The condition is padj < 0.05. If this is True (the gene is significant), it gets one color; if False, it gets another.
+
+palette={True: "red", False: "grey"}: This explicitly sets the colors. Significant genes (True) are colored red, and non-significant genes (False) are grey.
+
+plt.axhline(...) & plt.axvline(...): These add the dashed "cutoff" lines to help guide the eye.
+
+The axhline shows the raw p-value cutoff of 0.05.
+
+The axvline lines show the 2-fold change cutoffs (log2FC = 1 and log2FC = -1).
+
+Interpretation: The plot is called a "volcano" because the significant genes (in red) form a shape that looks like an erupting volcano. The most interesting genes are in the top-right (strongly up-regulated and significant) and top-left (strongly down-regulated and significant).
+
+Cell 6: PCA Plot (Quality Control)
+This plot is for Quality Control (QC). Its goal is to see if your samples group together as you expect.
+
+Python
+
+# ===============================_
+# 5. PCA Plot of Samples
+# ===============================_
+# Log-transform counts (add 1 to avoid log(0))
+norm_counts = np.log2(counts_df + 1)
+
+# Run PCA
+pca = PCA(n_components=2)
+pc = pca.fit_transform(norm_counts)
+
+# Create DataFrame for plotting
+pca_df = pd.DataFrame(pc, columns=["PC1", "PC2"], index=counts_df.index)
+pca_df["Condition"] = metadata_df["condition"]
+
+# Plot PCA
+# ... (sns.scatterplot)
+plt.show()
+norm_counts = np.log2(counts_df + 1): For PCA, we need to transform the data to be roughly normally distributed (it doesn't like skewed count data). A simple log2 transform is standard for this. We add +1 (a "pseudocount") to avoid taking log(0), which is undefined.
+
+Note: This is a different normalization than the DESeq2 size factors. This is a "quick and dirty" transform used only for this visualization.
+
+pca = PCA(n_components=2): Initializes the PCA model. We're telling it to reduce the data down to 2 components (dimensions).
+
+pc = pca.fit_transform(norm_counts): This fits the PCA model to our thousands of genes and transforms the data, projecting each sample from thousands of dimensions (one per gene) down to just two dimensions (PC1 and PC2).
+
+pca_df = pd.DataFrame(...): Creates a new DataFrame to hold these new PC1 and PC2 coordinates.
+
+pca_df["Condition"] = metadata_df["condition"]: Adds the "Condition" label back so we can color the dots.
+
+sns.scatterplot(..., x="PC1", y="PC2", hue="Condition"): Creates the scatter plot.
+
+Each dot is now a SAMPLE, not a gene.
+
+PC1 (x-axis) is the new "meta-axis" that captures the largest amount of variance in the data.
+
+PC2 (y-axis) captures the second-largest amount of variance.
+
+Interpretation: This is a fantastic result! The Control samples (blue) all cluster tightly together on the left, and the Treatment samples (orange) cluster tightly together on the right. This shows that the biggest source of variation in the entire experiment (PC1) is the "condition" (Treatment vs. Control). This is exactly what you want to see. It means your treatment worked and your samples are high-quality.
+
+
+
+
+
+
+BI3
+🧬 High-Level Goal & Core Concepts
+First, let's understand the "what" and "why." This script is a common bioinformatics task: loading and visualizing protein data.
+
+Proteins are studied in two main forms, and this script handles both:
+
+1D Sequence (FASTA): This is the protein's "recipe." It's a simple string of letters (amino acids), like "MKLV...". The file format for this is .fasta.
+
+3D Structure (PDB): This is the "finished dish." It's the complex, folded 3D shape of the protein. This data is stored as a list of X, Y, and Z coordinates for every single atom in the molecule. The file format for this is .pdb.
+
+This script loads both files for a single protein. It prints the 1D sequence data and then uses two different methods to visualize the 3D structure:
+
+A "basic" 3D scatter plot using Matplotlib.
+
+A "proper" interactive cartoon model using py3Dmol.
+
+💻 Line-by-Line Code Explanation
+Here is the detailed breakdown of each section.
+
+Section 1: Imports and Setup
+Python
+
+from Bio import SeqIO
+from Bio.PDB import PDBParser
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import os
+import numpy as np
+
+try:
+    import py3Dmol
+    PY3DMOL_AVAILABLE = True
+except ImportError:
+    PY3DMOL_AVAILABLE = False
+    print("[Warning] py3Dmol not installed. Cartoon visualization will be skipped.")
+from Bio import SeqIO: Imports the Sequence Input/Output (SeqIO) module from the Biopython library (Bio). This is the primary tool for reading and writing sequence files like FASTA.
+
+from Bio.PDB import PDBParser: Imports the PDBParser class, also from Biopython. This tool is specifically designed to read and parse the complex PDB structure files.
+
+import matplotlib.pyplot as plt: Imports the main plotting library, Matplotlib.
+
+from mpl_toolkits.mplot3d import Axes3D: This is crucial. It imports the toolkit required to make 3D plots (like 3D axes) in Matplotlib.
+
+import os: Imports the Operating System module. We need this for one key function: os.path.exists(), which checks if a file exists before we try to open it.
+
+import numpy as np: Imports NumPy, the core library for numerical operations. Biopython's PDB parser returns coordinates as NumPy arrays, so this is an important dependency.
+
+try...except...: This is a conditional import.
+
+try: import py3Dmol: The code tries to import py3Dmol, an optional library for high-quality, interactive 3D molecule viewing (ideal for notebooks).
+
+PY3DMOL_AVAILABLE = True: If the import succeeds, it sets a "flag" variable to True. This is like a light switch that tells the code, "Go ahead, you can use py3Dmol later."
+
+except ImportError:: If py3Dmol is not installed, the code "catches" the error instead of crashing.
+
+PY3DMOL_AVAILABLE = False: It sets the flag to False.
+
+print(...): It prints a helpful warning message to the user.
+
+Section 2: Reading the FASTA File (1D Sequence)
+Python
+
+fasta_file = r"/Users/sabhyalokhande/Downloads/BI/sequence.fasta"  
+
+if os.path.exists(fasta_file):
+    record = SeqIO.read(fasta_file, "fasta")
+
+    print("=== FASTA FILE INFORMATION ===")
+    print("Protein ID:", record.id)
+    print("Description:", record.description)
+    print("Sequence:\n", record.seq)
+    print("Length of Sequence:", len(record.seq))
+    print("\n--------------------------------------\n")
+else:
+    print(f"[Warning] FASTA file '{fasta_file}' not found. Skipping sequence display.\n")
+fasta_file = r"...": This defines the file path. The r before the string stands for "raw string." It tells Python to treat backslashes (\) as literal characters, which is essential for file paths on Windows (though good practice on all systems).
+
+if os.path.exists(fasta_file):: This is a safety check. It asks the OS, "Does a file at this path actually exist?" The code inside the if block only runs if this is True.
+
+record = SeqIO.read(fasta_file, "fasta"): This is the core sequence-reading line.
+
+SeqIO.read is used when your file contains exactly one sequence (or "record").
+
+fasta_file is the path to the file.
+
+"fasta" tells the parser what format to expect.
+
+record is now a Biopython SeqRecord object, which is a container holding all the data from the FASTA entry.
+
+print("Protein ID:", record.id): Prints the id of the record. This is the text from the header line (e.g., >pdb3rgk_A) up to the first space.
+
+print("Description:", record.description): Prints the entire header line.
+
+print("Sequence:\n", record.seq): Prints the actual amino acid sequence (e.g., "MKLV..."). This is stored as a special Seq object, not just a plain string.
+
+print("Length...", len(record.seq)): Uses the standard len() function to get the length of the sequence.
+
+else: print(...): If the os.path.exists check failed, this prints a warning.
+
+Section 3: Parsing the PDB File (3D Structure)
+Python
+
+pdb_file = r"/Users/sabhyalokhande/Downloads/BI/pdb3rgk.ent"  
+
+if not os.path.exists(pdb_file):
+    print(f"[Error] Structure file '{pdb_file}' not found.")
+else:
+    parser = PDBParser(QUIET=True)
+    structure = parser.get_structure("protein_structure", pdb_file)
+pdb_file = r"...": Defines the path to the PDB file. .ent is a common extension for PDB files.
+
+if not os.path.exists(pdb_file):: Another safety check.
+
+parser = PDBParser(QUIET=True): Creates an instance of the PDBParser.
+
+QUIET=True is very useful. PDB files from the official database often contain non-standard formatting that Biopython flags as a "warning." This argument suppresses those noisy, non-critical warnings.
+
+structure = parser.get_structure(...): This is the core structure-parsing line.
+
+"protein_structure": This is just an arbitrary name or ID you give to the structure (e.g., "my_protein").
+
+pdb_file: The file to parse.
+
+structure is now a high-level Structure object. This object contains a complex hierarchy: Structure -> Model -> Chain -> Residue -> Atom.
+
+Section 4: Matplotlib 3D Visualization (Basic Method)
+This section creates a "connect-the-dots" plot of all the carbon atoms.
+
+Python
+
+    coords = [atom.coord for atom in structure.get_atoms() if atom.element == 'C']
+
+    if len(coords) == 0:
+        print("[Warning] No Cα atom coordinates found in file.")
+    else:
+        x, y, z = zip(*coords)
+
+        fig = plt.figure(figsize=(7, 6))
+        ax = fig.add_subplot(111, projection='3d')
+        ax.plot(x, y, z, marker='o', color='blue', markersize=4, linewidth=1)
+        ax.set_title("3D Structure (Matplotlib Line + Cα Atoms)")
+        ax.set_xlabel("X-axis")
+        ax.set_ylabel("Y-axis")
+        ax.set_zlabel("Z-axis")
+        plt.show()
+coords = [atom.coord for atom in structure.get_atoms() if atom.element == 'C']: This is a list comprehension, a concise way to build a list. Let's break it down:
+
+structure.get_atoms(): This iterates over every single atom in the PDB file.
+
+if atom.element == 'C': This is a filter. It only processes atoms whose element is 'C' (Carbon).
+
+Crucial Detail: This code is not plotting just the C-alpha (CA) backbone. It's plotting all carbons: the C-alpha, C-beta, side-chain carbons, and carbons in the main backbone. This will result in a much denser, "scratchier" plot than a simple backbone trace. The title "Cα Atoms" is slightly misleading in the code's comment.
+
+atom.coord: For each atom that passes the filter, it gets its coordinate (a NumPy array of [x, y, z]).
+
+coords becomes a list of coordinate arrays: [[x1,y1,z1], [x2,y2,z2], ...].
+
+x, y, z = zip(*coords): This is a very common Python idiom.
+
+*coords: This "unpacks" the list, feeding each [x, y, z] sublist as a separate argument to zip.
+
+zip(...): zip takes all the first items (all the x's), all the second items (all the y's), etc., and groups them.
+
+The result is three "tuples" (x, y, z) that Matplotlib can plot.
+
+fig = plt.figure(...): Creates a new figure (the canvas).
+
+ax = fig.add_subplot(111, projection='3d'): This is how you add a 3D plot. 111 means a 1x1 grid, 1st subplot. projection='3d' is what enables the 3D axes.
+
+ax.plot(...): Plots the data.
+
+x, y, z: The coordinates.
+
+marker='o': Puts a small circle dot at each atom's (x,y,z) position.
+
+linewidth=1: Connects the dots with a line. Note: The line just connects the atoms in the order they appeared in the file, which is not biologically meaningful.
+
+ax.set_title(...) etc.: Standard Matplotlib for setting labels.
+
+plt.show(): Displays the plot.
+
+Section 5: py3Dmol Visualization (Advanced Method)
+This creates a proper, interactive, and beautiful "cartoon" model. This block only runs if the try...except at the top was successful.
+
+Python
+
+        if PY3DMOL_AVAILABLE:
+            with open(pdb_file) as f:
+                pdb_data = f.read()
+
+            view = py3Dmol.view(width=700, height=500)
+            view.addModel(pdb_data, "pdb")
+            view.setStyle({'cartoon': {'color':'spectrum'}}) 
+            view.zoomTo()
+            view.show()
+            print("py3Dmol cartoon visualization displayed.")
+        else:
+            print("[Info] Install py3Dmol for cartoon-style 3D visualization.")
+if PY3DMOL_AVAILABLE:: Checks the "flag" variable we set during the import.
+
+with open(pdb_file) as f:: This is the standard, safe way to open a file.
+
+pdb_data = f.read(): It reads the entire PDB file into a single string. py3Dmol works by taking this raw PDB text.
+
+view = py3Dmol.view(...): Creates the 3D viewer "widget" with a specified size.
+
+view.addModel(pdb_data, "pdb"): Loads the PDB text (the "model") into the viewer.
+
+view.setStyle({'cartoon': {'color':'spectrum'}}): This is the styling command.
+
+'cartoon': This is the classic ribbon representation that clearly shows ɑ-helices and β-sheets.
+
+'color':'spectrum': This is a common coloring scheme that colors the protein in a "rainbow" spectrum from one end (the N-terminus) to the other (the C-terminus).
+
+view.zoomTo(): Automatically adjusts the camera to fit the entire molecule in the view.
+
+view.show(): Renders the interactive widget in your notebook.
+
+else:: If py3Dmol wasn't available, this just prints an informational message.
+
+
+
+
+
+
+BI4
+This notebook performs a ligand-based virtual screening simulation.
+
+The core idea is to start with a protein's 3D structure that already has a known, well-bound ligand (a "reference" molecule). We then assume that other molecules (potential drugs) that are chemically similar to this reference ligand will also bind well.
+
+This code does not run a true, physics-based molecular docking simulation (which is computationally very expensive). Instead, it simulates the result by:
+
+Identifying all ligands in a protein file (5RGU.pdb).
+
+Choosing one (UGD) as the "reference" or "gold standard."
+
+Calculating the chemical "fingerprint" of all ligands.
+
+Measuring the Tanimoto Similarity of all other ligands to the reference ligand.
+
+Converting this similarity score (0.0 to 1.0) into a "pseudo-docking score" to rank them.
+
+Visualizing the protein and its best-matching ligand.
+
+cell 1: Markdown
+Markdown
+
+Practical 4 - Perform molecular docking simulations to predict the binding affinity between a protein target and a small molecule
+ligand. Additionally, you will conduct virtual screening to identify potential drug candidates.
+This cell is markdown, not code. It simply provides a title and description for the notebook, stating the goal is to perform molecular docking and virtual screening.
+
+cell 2: Code (Initial Ligand Discovery)
+This cell's purpose is to quickly scan the PDB file and see what non-protein molecules are present.
+
+Python
+
+from Bio.PDB import PDBParser
+
+pdb_file = r"/Users/sabhyalokhande/Downloads/BI/5RGU.pdb"
+parser = PDBParser(QUIET=True)
+structure = parser.get_structure("protein", pdb_file)
+
+ligands = set()
+
+for model in structure:
+    for chain in model:
+        for residue in chain:
+            # HETATM residues are non-standard (ligands, ions)
+            if residue.id[0] != " ":
+                ligands.add(residue.resname)
+
+print("Ligands found in the PDB file:", ligands)
+from Bio.PDB import PDBParser: Imports the PDBParser class from the Biopython library, which is the tool used to read and understand PDB files.
+
+pdb_file = r"...": Defines the file path for the protein structure file (5RGU.pdb). The r makes it a "raw" string, preventing issues with backslashes in the path.
+
+parser = PDBParser(QUIET=True): Creates an instance of the parser. QUIET=True suppresses common warnings about PDB file formatting, which are often not critical.
+
+structure = parser.get_structure("protein", pdb_file): This is the main parsing command. It reads the pdb_file and creates a Structure object named "protein." This object contains the full hierarchy of the molecule (Model -> Chain -> Residue -> Atom).
+
+ligands = set(): Initializes an empty set. A set is used here because it automatically handles duplicates; if we find "HOH" (water) 50 times, it will only be stored once.
+
+for model in structure:: Begins looping through all models in the PDB file. Most PDB files (like this one) only have one model (Model 0).
+
+for chain in model:: Loops through all chains in the model (e.g., Chain A, Chain B).
+
+for residue in chain:: Loops through all residues (amino acids, water, ligands) in that chain.
+
+if residue.id[0] != " ":: This is the key logic for finding ligands. In a PDB file:
+
+ATOM records (the protein itself) have a blank space as the first element of their residue ID.
+
+HETATM records ("hetero-atoms," or non-protein atoms) have a non-space value, like H_ (for HETATM), W (for water), etc. This line effectively translates to: "If this residue is a HETATM..."
+
+ligands.add(residue.resname): If the residue is a HETATM, this gets its 3-letter name (e.g., "UGD", "DMS", "HOH") and adds it to the set.
+
+print(...): Prints the final set of all unique HETATM names found in the file. The output {'UGD', 'DMS', 'HOH'} tells us the file contains the ligand UGD, Dimethyl sulfoxide (DMS - a solvent), and water (HOH).
+
+cell 3: Code (Main Docking/Screening Workflow)
+This cell performs the full (simulated) virtual screening, from extracting molecules to scoring and visualizing them.
+
+3.1: Imports and Setup
+Python
+
+import os
+import sys
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from Bio.PDB import PDBParser, PDBIO, Select
+from rdkit import Chem
+from rdkit.Chem import AllChem, DataStructs
+import py3Dmol
+
+import warnings
+warnings.filterwarnings("ignore")
+os: Used for creating directories (os.makedirs) and managing file paths (os.path.join).
+
+sys: Used to exit the script (sys.exit) if a critical error occurs (like no ligands being found).
+
+numpy, pandas, matplotlib, seaborn: The standard data science and plotting stack.
+
+from Bio.PDB import ...: In addition to PDBParser, we now import:
+
+PDBIO: The PDB Input/Output writer, used to save parts of a PDB structure to a new file.
+
+Select: A base class that allows us to create a custom filter to select which atoms/residues we want to save.
+
+from rdkit import ...: Imports RDKit, the most powerful open-source library for chemical informatics.
+
+Chem: The core RDKit module.
+
+AllChem: Contains more advanced tools, including 3D conformation generation (EmbedMolecule) and molecular fingerprints (GetMorganFingerprintAsBitVect).
+
+DataStructs: Used to calculate the Tanimoto similarity.
+
+import py3Dmol: Imports the interactive 3D visualization library.
+
+warnings.filterwarnings("ignore"): Suppresses all warnings, including the RDKit deprecation warnings seen in your output.
+
+3.2: Constants and Helper Class
+Python
+
+PDB_FILE = r"/Users/sabhyalokhande/Downloads/BI/5RGU.pdb"
+OUTPUT_DIR = "ligand_files"
+RESULT_CSV = "protein_ligand_docking_results.csv"
+
+# A set of common "non-drug" residues to ignore
+IGNORE_RESIDUES = {"HOH", "WAT", "H2O", "NA", "CL", "CA", "K", "MG", "ZN", "MN", "SO4"}
+
+RDKIT_SEED = 42
+np.random.seed(42)
+
+class LigandSelect(Select):
+    def __init__(self, ligand_name):
+        self.ligand_name = ligand_name
+    def accept_residue(self, residue):
+        return residue.get_resname() == self.ligand_name
+Constants: Defines key file paths and settings at the top, which is excellent programming practice.
+
+IGNORE_RESIDUES: This is a crucial refinement from Cell 2. We don't want to "dock" water (HOH), ions (NA, CL), or common solvents. This set is used to filter them out.
+
+...seed(42): Sets a "random seed." This ensures that any operations with a random component (like 3D structure generation) produce the exact same result every time the code runs. This makes the script reproducible.
+
+class LigandSelect(Select):: This defines a custom filter class for PDBIO.
+
+def __init__(self, ligand_name): The constructor. When we create an instance LigandSelect("UGD"), it stores "UGD" in self.ligand_name.
+
+def accept_residue(self, residue): This is the magic. The PDBIO writer will pass every residue to this method. The method only returns True if the residue's name matches the one we're looking for (e.g., "UGD"). If it's False (e.g., "SER", "HOH"), that residue is not saved.
+
+3.3: Ligand Extraction
+Python
+
+parser = PDBParser(QUIET=True)
+try:
+    structure = parser.get_structure("protein", PDB_FILE)
+except Exception as e:
+    print(f"ERROR reading file: {e}")
+    sys.exit(1)
+
+# ... (Ligand finding loop, same as Cell 2 but with IGNORE_RESIDUES) ...
+ligands_found.append(resname)
+print("Detected ligands:", ligands_found)
+# ... (Error check if no ligands are found) ...
+
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+io = PDBIO()
+ligand_paths = []
+for lig in ligands_found:
+    outpath = os.path.join(OUTPUT_DIR, f"{lig}.pdb")
+    io.set_structure(structure)
+    io.save(outpath, LigandSelect(lig))
+    ligand_paths.append(outpath)
+parser = ..., structure = ...: Same as Cell 2, but wrapped in a try...except block for robust error handling.
+
+ligands_found = []: This time, a list is used instead of a set to maintain the order of discovery (though in this case, the if resname not in... check still makes it a unique list).
+
+if residue.id[0] != " " and resname not in IGNORE_RESIDUES:: This is the improved filter. It finds HETATMs AND checks that they are not in our junk list. This is why HOH is skipped, and the output is just ['UGD', 'DMS'].
+
+os.makedirs(OUTPUT_DIR, exist_ok=True): Creates the ligand_files directory.
+
+io = PDBIO(): Creates the PDB writer object.
+
+for lig in ligands_found:: Loops through our clean list (['UGD', 'DMS']).
+
+outpath = ...: Creates the output path, e.g., ligand_files/UGD.pdb.
+
+io.set_structure(structure): Sets the source structure to write from.
+
+io.save(outpath, LigandSelect(lig)): This saves the ligand. It uses the io writer to save to outpath, but passes our custom LigandSelect(lig) filter. This creates a new PDB file containing only the atoms for that specific ligand.
+
+3.4: RDKit Molecule Processing
+This section converts the PDB-formatted ligands into RDKit "mol" objects, which are necessary for chemical analysis.
+
+Python
+
+rdkit_mols = []
+rdkit_names = []
+
+for path in ligand_paths:
+    name = os.path.basename(path).replace(".pdb", "")
+    mol = Chem.MolFromPDBFile(path, removeHs=False, sanitize=False)
+    # ... (Error checking) ...
+    try:
+        Chem.SanitizeMol(mol)
+    except Exception:
+        # ... (Secondary sanitization attempt) ...
+    
+    mol = Chem.AddHs(mol, addCoords=True)
+    try:
+        # ... (EmbedMolecule - generate 3D coords) ...
+    except ...
+    
+    try:
+        AllChem.MMFFOptimizeMolecule(mol)
+    except Exception:
+        pass # Optimization is optional
+
+    rdkit_mols.append(mol)
+    rdkit_names.append(name)
+mol = Chem.MolFromPDBFile(...): Reads the ligand-only PDB (e.g., UGD.pdb) and creates an RDKit molecule object. We set sanitize=False because we will do it manually, which allows for better error handling.
+
+try: Chem.SanitizeMol(mol): This is a critical step. PDB files only store atom types and coordinates. RDKit needs to know the bond types (single, double, aromatic) and atom valencies. SanitizeMol intelligently calculates all of this. The try...except blocks are there because this process can fail on complex or unusual molecules.
+
+mol = Chem.AddHs(mol, addCoords=True): This adds hydrogen atoms to the molecule, which are absent in X-ray crystal structures but essential for chemical calculations. addCoords=True attempts to place them in stereochemically correct 3D positions.
+
+AllChem.EmbedMolecule(mol, params): This (re)generates a 3D conformation for the molecule. It ensures the molecule has a low-energy, physically plausible shape, especially after adding hydrogens.
+
+AllChem.MMFFOptimizeMolecule(mol): This performs a final "cleanup." It uses the Merck Molecular Force Field (MMFF) to perform a quick energy minimization, relaxing the 3D structure to relieve any steric clashes or awkward bond angles.
+
+3.5: Similarity Scoring (The "Pseudo-Docking")
+Python
+
+fps = []
+for mol in rdkit_mols:
+    # ... (GetMorganFingerprintAsBitVect) ...
+    fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=2048)
+    fps.append(fp)
+
+ref_fp = fps[0]  # UGD is the reference
+ref_name = rdkit_names[0]
+
+def sim_to_score(sim, low=-4.0, high=-12.0):
+    return round(low + (high - low) * sim, 3)
+
+scores, sims = [], []
+for fp in fps:
+    sim = DataStructs.TanimotoSimilarity(ref_fp, fp)
+    sims.append(sim)
+    scores.append(sim_to_score(sim))
+fp = AllChem.GetMorganFingerprintAsBitVect(...): This is the heart of the chemical comparison. It generates a Morgan Fingerprint for each molecule. This algorithm converts the 2D/3D chemical graph into a 2048-bit "fingerprint" (a list of 0s and 1s) that represents its structural features.
+
+ref_fp = fps[0]: We take the fingerprint of the first ligand (UGD) and set it as our reference.
+
+def sim_to_score(...): This is the "pseudo-docking" function. It's a simple linear map.
+
+If similarity (sim) is 0.0, the score is -4.0 (bad binding).
+
+If similarity (sim) is 1.0, the score is -12.0 (great binding).
+
+This simulates a real docking score, where more negative values mean better binding.
+
+sim = DataStructs.TanimotoSimilarity(ref_fp, fp): This calculates the Tanimoto Similarity (the most common metric) between our reference (ref_fp) and the current ligand (fp). The result is a score between 0.0 (no similarity) and 1.0 (identical).
+
+scores.append(...): Appends the calculated pseudo-score.
+
+3.6: Results, Plotting, and Visualization
+Python
+
+results_df = pd.DataFrame({ ... })
+print(results_df)
+results_df.to_csv(RESULT_CSV, index=False)
+
+# ... (print best ligand) ...
+
+plt.figure(...)
+sns.barplot(x="Ligand", y="Pseudo_Docking_Score_kcal_per_mol", ...)
+plt.show()
+
+# ... (Read pdb_block and lig_block) ...
+
+view = py3Dmol.view(width=700, height=500)
+view.addModel(pdb_block, 'pdb')
+view.setStyle({'cartoon': {'color': 'spectrum'}})
+view.addModel(lig_block, 'pdb')
+view.setStyle({'model': 1}, {'stick': {'radius': 0.25, 'color': 'red'}})
+view.setBackgroundColor('0xeeeeee')
+view.zoomTo()
+view.show()
+
+# ... (Save results to SDF file) ...
+results_df = pd.DataFrame(...): Creates the final Pandas DataFrame from the collected lists (names, similarities, and scores).
+
+print(...) & .to_csv(...): Prints the results to the screen and saves them to a CSV file for your records.
+
+sns.barplot(...): Uses Seaborn to create a simple bar chart comparing the pseudo-docking scores of all found ligands.
+
+with open(...) blocks: The code re-reads the original full PDB file (pdb_block) and the extracted PDB file for the best ligand (lig_block).
+
+view = py3Dmol.view(...): Initializes the interactive viewer.
+
+view.addModel(pdb_block, 'pdb'): Adds the full protein structure (this is Model 0).
+
+view.setStyle({'cartoon': {'color': 'spectrum'}}): Styles Model 0 (the protein) as a rainbow cartoon.
+
+view.addModel(lig_block, 'pdb'): Adds the best ligand (UGD) as a separate model (this is Model 1).
+
+view.setStyle({'model': 1}, ...): This is a targeted style. It says "for Model 1 only ({'model': 1}), style it as red sticks."
+
+view.show(): Renders the final, combined visualization showing the red ligand sitting inside the protein structure.
+
+writer = Chem.SDWriter(...): This last part saves all the RDKit-processed molecules (with H-atoms and 3D coordinates) into a single SDF file. This is a standard format for sharing a chemical library.
+
+
+
+
+
+BI5
+This script is an excellent example of a complete machine learning workflow for bioinformatics, specifically for classifying DNA sequences.
+
+The core goal is to train a computer model to distinguish between "Healthy" and "Disease" DNA sequences based on their patterns.
+
+Let's break down the "what, why, and how" for each section.
+
+🧬 Core Concepts
+Before the code, here's the main idea:
+
+The Problem: We have a list of DNA sequences (e.g., "ATGC...") and a label for each ("Healthy" or "Disease"). A machine learning model can't read "ATGC" directly. We need to convert these sequences into numbers.
+
+The Solution (k-mers): The script uses a technique called k-mer counting.
+
+A "k-mer" is a short, sliding "word" of length k from a DNA sequence.
+
+If k=3 and the sequence is ATGCAT, the 3-mers are: "ATG", "TGC", "GCA", and "CAT".
+
+The script counts how many times each possible k-mer ("AAA", "AAC", "AAT"... "TTT") appears in each sequence.
+
+This count becomes the numerical "fingerprint" of the sequence. For example:
+
+Sequence 1: {"AAA": 0, "AAT": 5, "ATG": 1, ...} -> [0, 5, 1, ...]
+
+Sequence 2: {"AAA": 3, "AAT": 1, "ATG": 0, ...} -> [3, 1, 0, ...]
+
+The Models: This numerical table is then used to train two "classifier" models, Random Forest and SVM, to see which one is better at learning the patterns that separate "Healthy" from "Disease."
+
+💻 Code Explanation by Section
+Here is a detailed, line-by-line breakdown of the script.
+
+1. Imports: Loading the Toolbox
+This section imports all the necessary libraries.
+
+Python
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report
+numpy as np: The fundamental package for numerical operations (arrays, matrices).
+
+pandas as pd: The primary tool for loading and manipulating data in tables (called "DataFrames").
+
+matplotlib.pyplot as plt & seaborn as sns: Powerful libraries used for plotting and visualizing data (like the bar charts and heatmaps).
+
+CountVectorizer: This is a key component. It's a tool from scikit-learn's text processing module. We are cleverly adapting it to treat DNA sequences as "sentences" and our k-mers as "words." It will do the k-mer counting for us.
+
+train_test_split: A crucial function for splitting our data into a "training" set (for the model to learn from) and a "testing" set (to see how well it learned).
+
+RandomForestClassifier & SVC: These are the two types of machine learning models we will train. SVC stands for Support Vector Classifier.
+
+sklearn.metrics ...: These are all the functions used to score and evaluate how well our models performed (Accuracy, Precision, etc.).
+
+2. Data Loading
+This section reads the data from the file into memory.
+
+Python
+
+file_path = r"/Users/sabhyalokhande/Downloads/BI/human_datset.txt"
+df = pd.read_csv(file_path, sep='\t')
+print(df.head())
+
+sequences = df['sequence']
+labels = df['class']
+file_path = r"...": Defines the file path as a "raw" string (the r is important as it prevents backslashes from being misinterpreted).
+
+df = pd.read_csv(file_path, sep='\t'): This tells Pandas to read the specified file. sep='\t' is critical; it specifies that the file is tab-separated (not comma-separated, which is the default). The result is stored in a DataFrame called df.
+
+print(df.head()): This prints the first 5 rows of the DataFrame, letting us confirm the columns are sequence and class.
+
+sequences = df['sequence'] & labels = df['class']: This separates our data.
+
+sequences (our X or features) becomes a list of all the DNA strings.
+
+labels (our y or target) becomes a list of the corresponding classes (e.g., 0 or 1) that we want to predict.
+
+3. Feature Engineering: DNA to Numbers (k-mers)
+This is the most important bioinformatics-specific part of the code.
+
+Python
+
+def get_kmers(seq, k=3):
+    return [seq[i:i+k] for i in range(len(seq)-k+1)]
+
+vectorizer = CountVectorizer(analyzer=get_kmers)
+X = vectorizer.fit_transform(sequences)
+y = labels
+
+X_df = pd.DataFrame(X.toarray(), columns=vectorizer.get_feature_names_out())
+def get_kmers(seq, k=3):: This defines a simple function that takes a sequence (seq) and a k-mer size (k).
+
+return [seq[i:i+k] ...]: This is a list comprehension that "slides" a window of size k across the sequence.
+
+Example: For seq="ATGC" and k=3:
+
+i=0: seq[0:3] -> "ATG"
+
+i=1: seq[1:4] -> "TGC"
+
+It stops, returning ["ATG", "TGC"].
+
+vectorizer = CountVectorizer(analyzer=get_kmers): This is the "magic" line. We create a CountVectorizer instance but, crucially, we tell it: "Do not use your default word splitter. Instead, use my get_kmers function as the analyzer."
+
+X = vectorizer.fit_transform(sequences): This one line does all the work:
+
+fit: It goes through all the sequences in the sequences list and finds every unique 3-mer ("AAA", "AAC", etc.) to build its "vocabulary."
+
+transform: It then creates a giant matrix (called a sparse matrix, X). For each sequence (row), it counts the occurrences of each k-mer in its vocabulary (column).
+
+X_df = pd.DataFrame(X.toarray(), ...): This converts the memory-efficient sparse matrix (X) into a full, "dense" Pandas DataFrame (X_df).
+
+X.toarray(): Fills in all the 0s.
+
+columns=vectorizer.get_feature_names_out(): This is great! It gets the vocabulary (e.g., "AAA", "AAC"...) and uses it to label the columns, so we know exactly what we're looking at.
+
+4. Model Training and Prediction
+Here, we split our data and teach the models.
+
+Python
+
+X_train, X_test, y_train, y_test = train_test_split(X_df, y, test_size=0.2, random_state=42)
+
+rf = RandomForestClassifier(random_state=42).fit(X_train, y_train)
+svm = SVC(kernel="linear").fit(X_train, y_train)
+
+rf_pred, svm_pred = rf.predict(X_test), svm.predict(X_test)
+X_train, X_test, ... = train_test_split(...): This splits the dataset.
+
+Why? This is the most fundamental concept in machine learning. We must test our model on data it has never seen before.
+
+X_train, y_train (80% of the data): The "training set." The model uses this to learn the patterns.
+
+X_test, y_test (20% of the data): The "testing set." We hide this from the model until the very end to get an honest evaluation of its performance.
+
+random_state=42: This is a "seed" to make the split reproducible.
+
+rf = RandomForestClassifier(...).fit(X_train, y_train):
+
+We initialize a Random Forest Classifier. This model works by building hundreds of small "decision trees" and letting them "vote" on the final answer. It's powerful and good at finding complex patterns.
+
+The .fit(X_train, y_train) command is the training step. The model "learns" the relationship between the k-mer counts (X_train) and the labels (y_train).
+
+svm = SVC(kernel="linear").fit(X_train, y_train):
+
+We initialize a Support Vector Classifier.
+
+kernel="linear" tells it to find a simple, straight "line" (or hyperplane in many dimensions) that best separates the "Healthy" data points from the "Disease" data points.
+
+.fit(...) trains this model as well.
+
+rf_pred, svm_pred = rf.predict(X_test), svm.predict(X_test): This is the prediction step. We take our two trained models (rf and svm) and ask them to predict the class for the X_test data (the k-mer counts they've never seen).
+
+5. Model Evaluation
+Now we score the predictions against the true answers (y_test).
+
+Python
+
+def evaluate(name, y_true, y_pred):
+    print(f"\n{name} Results:")
+    print("Accuracy:", accuracy_score(y_true, y_pred))
+    print("Precision:", precision_score(y_true, y_pred, average='weighted'))
+    print("Recall:", recall_score(y_true, y_pred, average='weighted'))
+    print("F1 Score:", f1_score(y_true, y_pred, average='weighted'))
+    print(classification_report(y_true, y_pred))
+
+evaluate("Random Forest", y_test, rf_pred)
+evaluate("SVM", y_test, svm_pred)
+def evaluate(...): A helper function to print all the metrics neatly.
+
+accuracy_score: "What percentage of predictions were correct?" (e.g., 95%).
+
+precision_score: "Of all the times the model predicted 'Disease', what percentage was it actually right?" (High precision = low false positives).
+
+recall_score: "Of all the actual 'Disease' cases, what percentage did the model find?" (High recall = low false negatives).
+
+f1_score: A combined "harmonic mean" of Precision and Recall. It's a good single number to compare models.
+
+average='weighted': Calculates the metric for each class ("Healthy", "Disease") and computes an average, giving more "weight" to the class with more samples.
+
+classification_report: A handy sklearn function that prints the precision, recall, and f1-score for both classes individually.
+
+evaluate(...) calls: Runs the evaluation for both models' predictions.
+
+6. Visualization 1: Confusion Matrix
+This helps us see where the models are making errors.
+
+Python
+
+def plot_cm(y_true, y_pred, title):
+    sns.heatmap(confusion_matrix(y_true, y_pred), annot=True, fmt="d", cmap="Blues",
+                xticklabels=["Healthy","Disease"], yticklabels=["Healthy","Disease"])
+    plt.title(title); plt.xlabel("Predicted"); plt.ylabel("Actual"); plt.show()
+
+plot_cm(y_test, rf_pred, "Random Forest Confusion Matrix")
+plot_cm(y_test, svm_pred, "SVM Confusion Matrix")
+def plot_cm(...): A helper function for plotting.
+
+confusion_matrix(...): Calculates the 4-quadrant matrix:
+
+Top-Left (True Negative): Actual was "Healthy," Model predicted "Healthy." (Good)
+
+Top-Right (False Positive): Actual was "Healthy," Model predicted "Disease." (Bad)
+
+Bottom-Left (False Negative): Actual was "Disease," Model predicted "Healthy." (Very Bad)
+
+Bottom-Right (True Positive): Actual was "Disease," Model predicted "Disease." (Good)
+
+sns.heatmap(...): Uses Seaborn to draw a color-coded heatmap of this matrix.
+
+annot=True: Puts the numbers in the squares.
+
+fmt="d": Formats those numbers as integers.
+
+The plot_cm calls then generate these plots for both RF and SVM.
+
+7. Visualization 2: Feature Importance
+This is one of the best features of Random Forest. We can ask it, "What did you learn? Which k-mers were the most useful for making your decisions?"
+
+Python
+
+imp = rf.feature_importances_
+idx = np.argsort(imp)[-10:][::-1]
+plt.figure(figsize=(12,6))
+plt.bar(range(10), imp[idx], tick_label=[X_df.columns[i] for i in idx])
+plt.title("Top 10 Important k-mer Features"); plt.xticks(rotation=90); plt.show()
+imp = rf.feature_importances_: This extracts an array of "importance" scores from the trained Random Forest model. Each k-mer in our vocabulary gets a score.
+
+idx = np.argsort(imp)[-10:][::-1]: This is a smart bit of NumPy code to get the indices of the top 10 features.
+
+np.argsort(imp): Sorts the importances from lowest to highest and gives you their original positions (indices).
+
+[-10:]: Selects only the last 10 indices (which correspond to the 10 highest scores).
+
+[::-1]: Reverses that small list, so the #1 most important feature is first.
+
+plt.bar(...): Creates the bar chart.
+
+range(10): The x-axis (0-9).
+
+imp[idx]: The y-axis (the importance scores of the top 10 features).
+
+tick_label=[X_df.columns[i] for i in idx]: This is the best part. It uses our top-10 indices (idx) to look up the column names from our DataFrame X_df. This is how it gets the actual k-mer strings (e.g., "TGA", "CGC", etc.) to use as labels for the bars.
+
+The result is a plot showing the 10 most predictive 3-mers that the model used to tell "Healthy" and "Disease" sequences apart.
+
+
+
+
+
+
+BI6
+Here is a detailed, in-depth, line-by-line explanation of your Jupyter Notebook code.
+
+🧬 High-Level Goal & Core Concepts
+This script performs a simulated Genome-Wide Association Study (GWAS).
+
+What is a GWAS? A GWAS is a powerful statistical method used in genetics to find associations between specific genetic variations and particular traits (phenotypes).
+
+What is the Goal? The goal is to answer the question: "Which specific variations in the DNA sequence are statistically associated with a change in a trait like plant height or oil content?"
+
+What is a SNP? The genetic variations are called SNPs (Single Nucleotide Polymorphisms), which are single-letter changes in the DNA code (e.g., an 'A' becomes a 'G' at a specific location). In this code, a SNP's genotype for each sample is represented by 0, 1, or 2 (e.g., counting the number of 'G' alleles).
+
+What is this Code Actually Doing? This script is a simulation to test the GWAS pipeline. It does the following:
+
+Loads REAL Phenotypes: It loads an actual file (Phenos.csv) with measured traits like "TGW" (Thousand Grain Weight) and "PTH" (Plant Height).
+
+Simulates FAKE Genetic Data: It creates a large, random matrix (G) of 5,000 SNPs for all the samples. This data is completely random.
+
+"Injects" Effects: It intends to pick a few of these random SNPs (e.g., SNP_10, SNP_50) and artificially add their effect to the real phenotype data. This creates a new, simulated trait where we know which SNPs are the "causal" ones.
+
+Runs GWAS: It then runs a GWAS (a linear regression for all 5,000 SNPs) on this new simulated trait to see if it can "rediscover" the SNPs it just injected.
+
+Visualizes: It creates Manhattan plots, the standard visualization for GWAS, to show the results.
+
+Crucial Note on Your Code: The code intends to inject effects for the traits in your TRAITS list ("TGW", "PTH", etc.), but the causal_snps_for_trait dictionary uses different names ("TGW_H_adj", "PH_H_adj"). Because these keys don't match, the simulation step will fail silently. The inner for loop that adds the genetic effect will never run.
+
+Therefore, this script is actually running a "null simulation." It's testing for associations between the real phenotypes and 5,000 random SNPs. This is still a valid and important test (it shows you what "no results" looks like and tests your statistics), but it will not find the "injected" hits as intended. The "Corrected" comment in your code block suggests an awareness of this.
+
+💻 Line-by-Line Code Explanation
+Section 1: Configuration and Imports
+Python
+
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+import os
+
+# ---------- Config ----------
+PHENOS_PATH = "Phenos.csv"
+OUT_DIR = "gwas_results"
+N_SNPS = 5000
+# This list is correct based on your file.
+# Use the actual column names from your CSV file
+TRAITS = ["TGW", "PTH", "OIL", "PRT"]
+np.random.seed(42)
+# ----------------------------
+import numpy as np: Imports NumPy, the fundamental library for numerical computing (arrays, matrices, math functions).
+
+import pandas as pd: Imports Pandas, the primary library for data manipulation and analysis using DataFrames.
+
+import statsmodels.api as sm: Imports statsmodels, a powerful library for statistical modeling. We specifically use it for its sm.OLS (Ordinary Least Squares) linear regression function.
+
+import matplotlib.pyplot as plt: Imports Matplotlib, the main plotting library in Python.
+
+import os: Imports the Operating System library, used to create directories (os.makedirs).
+
+PHENOS_PATH = "Phenos.csv": Sets a constant variable for the path to your phenotype input file.
+
+OUT_DIR = "gwas_results": Sets the name for the output directory where all results will be saved.
+
+N_SNPS = 5000: Sets a variable for the number of SNPs you want to simulate.
+
+TRAITS = ["TGW", "PTH", "OIL", "PRT"]: Defines the list of trait column names from your Phenos.csv file that you want to analyze.
+
+np.random.seed(42): This is crucial for reproducibility. It "seeds" the random number generator. This means that every time you run this script, the np.random.randint call will produce the exact same "random" matrix G.
+
+Section 2: Data Loading and Simulation
+Python
+
+os.makedirs(OUT_DIR, exist_ok=True)
+
+# Load phenotype data
+# Add skiprows=2 to ignore the first two rows of the file
+phenos = pd.read_csv(PHENOS_PATH, encoding='latin1', skiprows=2).reset_index(drop=True)
+
+# Check traits exist
+for t in TRAITS:
+    if t not in phenos.columns:
+        raise ValueError(f"Trait '{t}' not found in phenos.csv. Columns: {phenos.columns.tolist()}")
+
+n_samples = phenos.shape[0]
+print(f"Samples: {n_samples}, Traits: {TRAITS}, Simulating {N_SNPS} SNPs...")
+
+# Simulate SNP matrix (0,1,2) — rows = samples, cols = SNPs
+G = pd.DataFrame(
+    np.random.randint(0, 3, size=(n_samples, N_SNPS)),
+    columns=[f"SNP_{i+1}" for i in range(N_SNPS)]
+)
+os.makedirs(OUT_DIR, exist_ok=True): Creates the "gwas_results" directory. exist_ok=True means it won't crash if the folder already exists.
+
+phenos = pd.read_csv(...):
+
+PHENOS_PATH: The file to read.
+
+encoding='latin1': This handles potential text encoding issues. latin1 is a common encoding for older files that might have special characters.
+
+skiprows=2: This tells Pandas to skip the first 2 rows of the CSV. This is often necessary if the file has extra header lines or comments before the actual data table.
+
+.reset_index(drop=True): After skipping rows, this re-calculates the DataFrame's index to be a clean 0, 1, 2, ...
+
+for t in TRAITS: ...: This is a sanity check. It loops through your TRAITS list and checks if each one actually exists as a column in the phenos DataFrame. If not, it stops the script with a ValueError (this is good practice).
+
+n_samples = phenos.shape[0]: Gets the number of samples (rows) from the phenotype file.
+
+G = pd.DataFrame(...): This creates the simulated genetic data (genotype matrix).
+
+np.random.randint(0, 3, size=(n_samples, N_SNPS)): This is the engine. It generates a NumPy array with n_samples rows and N_SNPS columns, filled with random integers from 0 (inclusive) to 3 (exclusive), i.e., 0, 1, or 2.
+
+columns=[f"SNP_{i+1}"...]: This creates a list of column names, like "SNP_1", "SNP_2", ... "SNP_5000".
+
+Section 3: Phenotype Simulation (with the identified issue)
+Python
+
+# CORRECTED: The keys in this dictionary now match the TRAITS list.
+causal_snps_for_trait = {
+    "YLD_H_adj": [10, 150, 1800],
+    "PH_H_adj": [50, 900, 2400],
+    "TGW_H_adj": [5, 1200, 3500]
+}
+effect_sizes = [3.5, 5.0, 4.0]  # effect sizes to inject (one per causal SNP)
+
+# Create simulated phenotypes by adding genetic effects onto real phenotypes
+phenotype_sim = {}
+for trait in TRAITS:
+    # MODIFIED: Added .fillna() to prevent errors from empty cells in the CSV.
+    base = phenos[trait].fillna(phenos[trait].mean()).astype(float).copy()
+    for i, s in enumerate(causal_snps_for_trait.get(trait, [])):
+        base = base + G.iloc[:, s] * effect_sizes[i]
+    phenotype_sim[trait] = base
+causal_snps_for_trait = { ... }: This dictionary defines the intended simulation. The key is the trait name, and the value is a list of SNP indices to make "causal" for that trait.
+
+THE ISSUE: Your TRAITS list is ["TGW", "PTH", ...], but your keys here are "YLD_H_adj", "PH_H_adj", etc. Because trait (e.g., "TGW") will never match a key in this dictionary, the simulation will not work as intended.
+
+effect_sizes = [...]: The "strength" of the effect for each causal SNP.
+
+phenotype_sim = {}: Initializes an empty dictionary to hold the new, simulated trait data.
+
+for trait in TRAITS:: The script loops through ["TGW", "PTH", "OIL", "PRT"].
+
+base = phenos[trait].fillna(...).copy():
+
+It selects the column for the current trait (e.g., phenos["TGW"]).
+
+.fillna(phenos[trait].mean()): A robust way to handle missing data. It finds any empty cells (NaN) and fills them with the average value for that entire trait column.
+
+.astype(float): Ensures the data is in a numeric format for math.
+
+.copy(): Creates a copy so the original phenos DataFrame is not modified.
+
+for i, s in enumerate(causal_snps_for_trait.get(trait, []))::
+
+causal_snps_for_trait.get(trait, []): This attempts to get the list of causal SNPs for the current trait.
+
+Example: When trait is "TGW", it looks for the key "TGW" in the dictionary. It fails.
+
+The .get() method's second argument, [], is the default value. Since no key matches, it returns [] (an empty list).
+
+Because the list is empty, this for loop is skipped.
+
+base = base + G.iloc[:, s] * effect_sizes[i]: This line, which would have added the effect, is never executed.
+
+phenotype_sim[trait] = base: The original, unmodified trait data is saved into the phenotype_sim dictionary.
+
+Section 4: The GWAS Function
+Python
+
+def run_gwas(trait_series, G_df):
+    results = []
+    
+    for snp in G_df.columns:
+        X = sm.add_constant(G_df[snp])        # intercept + SNP
+        model = sm.OLS(trait_series, X).fit()
+        pval = model.pvalues.get(snp, np.nan)
+        results.append((snp, pval))
+    gwas_df = pd.DataFrame(results, columns=["SNP", "p"])
+    gwas_df["-log10(p)"] = -np.log10(gwas_df["p"])
+    gwas_df["Pos"] = range(len(gwas_df))
+    return gwas_df
+def run_gwas(trait_series, G_df):: Defines the main GWAS function. It takes one trait (trait_series) and the entire genotype matrix (G_df) as input.
+
+results = []: Initializes an empty list to store the results of each test.
+
+for snp in G_df.columns:: This is the GWAS loop. It loops through every single one of the 5,000 SNP columns.
+
+X = sm.add_constant(G_df[snp]): This prepares the independent variables for the regression.
+
+Why add_constant? A linear model is y = mx + c.
+
+y is our trait.
+
+x is our SNP data (G_df[snp]).
+
+c is the intercept (the baseline value of the trait when the SNP value is 0).
+
+statsmodels requires you to explicitly add this intercept column (a column of 1s). sm.add_constant does this for you.
+
+model = sm.OLS(trait_series, X).fit(): This is the statistical test for one SNP.
+
+sm.OLS(trait_series, X): It sets up an Ordinary Least Squares (linear) regression, modeling the trait_series (y) as a function of X (the intercept and the SNP value).
+
+.fit(): It performs the regression and computes all the statistics.
+
+pval = model.pvalues.get(snp, np.nan): From the model results, this extracts the p-value for the snp variable (not the intercept). The p-value tells us the probability of seeing an association this strong or stronger just by chance. A low p-value (e.g., 0.0001) suggests a real association.
+
+gwas_df = pd.DataFrame(...): After the loop finishes, it converts the results list (of 5,000 tuples) into a clean DataFrame.
+
+gwas_df["-log10(p)"] = -np.log10(gwas_df["p"]): This is a standard transformation for visualization.
+
+Why? P-values get very small (e.g., 1e-10). This log10 transformation converts them to a more readable scale where bigger numbers are more significant.
+
+gwas_df["Pos"] = range(len(gwas_df)): Creates a simple Pos (position) column [0, 1, 2, ...] to use as the x-axis for plotting.
+
+Section 5: Main Analysis Loop (Run, Plot, Save)
+Python
+
+all_significant = {}
+for trait in TRAITS:
+    print(f"\nRunning GWAS for trait: {trait}")
+    trait_series = phenotype_sim[trait]
+    gwas_df = run_gwas(trait_series, G)
+    
+    threshold = -np.log10(0.05 / N_SNPS)
+    print(f"Bonferroni threshold (−log10): {threshold:.2f}")
+
+    # Save GWAS table
+    gwas_csv = os.path.join(OUT_DIR, f"gwas_{trait}.csv")
+    gwas_df.to_csv(gwas_csv, index=False)
+    print(f"Saved GWAS table to: {gwas_csv}")
+
+    # Plot Manhattan plot interactively
+    plt.figure(figsize=(12,5))
+    plt.scatter(gwas_df["Pos"], gwas_df["-log10(p)"], s=10, alpha=0.7)
+    plt.axhline(threshold, linestyle="--", color='red')
+    plt.title(f"Manhattan plot for {trait}")
+    plt.xlabel("SNP position")
+    plt.ylabel("-log10(p-value)")
+    plt.tight_layout()
+    plt.show()
+
+    # Save significant SNPs
+    sig = gwas_df[gwas_df["-log10(p)"] > threshold].copy().sort_values("-log10(p)", ascending=False)
+    sig_csv = os.path.join(OUT_DIR, f"significant_snps_{trait}.csv")
+    sig.to_csv(sig_csv, index=False)
+    all_significant[trait] = sig
+    print(f"Significant SNPs: {len(sig)}  (saved to {sig_csv})")
+all_significant = {}: Initializes a dictionary to store the significant hits for all traits.
+
+for trait in TRAITS:: The main loop that runs the entire analysis for "TGW", "PTH", etc.
+
+gwas_df = run_gwas(trait_series, G): Calls the function we just defined to run the 5,000 statistical tests.
+
+threshold = -np.log10(0.05 / N_SNPS): This calculates the Bonferroni correction threshold.
+
+Why? This is the most critical statistical concept here. If you run 5,000 tests and use a p-value cutoff of 0.05, you'd expect 5000 * 0.05 = 250 hits just by random chance!
+
+To prevent this "multiple testing" problem, the Bonferroni correction sets a much stricter significance threshold: 0.05 / 5000 = 0.00001.
+
+This line calculates the -log10 of that new, strict threshold (which is 5.0 for 5000 tests) to be plotted on our graph.
+
+gwas_df.to_csv(gwas_csv, index=False): Saves the full results (all 5,000 SNPs) to a CSV file.
+
+plt.figure(...): This block generates the Manhattan Plot.
+
+plt.scatter(...): Plots every SNP's position (Pos) on the x-axis against its significance (-log10(p)) on the y-axis.
+
+plt.axhline(threshold, ...): Draws the red dashed Bonferroni line.
+
+Interpretation: In a successful GWAS where the simulation worked, you would see a "skyscraper" of dots at SNP_10, SNP_150, etc., shooting up above this red line. Because of the key mismatch, you will likely see no dots cross this line.
+
+sig = gwas_df[gwas_df["-log10(p)"] > threshold].copy(): This line filters the 5,000 results, keeping only the SNPs that were "significant" (i.e., their -log10(p) value was above the red line).
+
+sig_csv = ...: Defines a new path to save just the significant hits.
+
+all_significant[trait] = sig: Stores the significant SNPs DataFrame in the summary dictionary.
+
+Section 6: Final Summary
+Python
+
+# Combine top significant SNPs across traits
+combined_list = []
+for trait, df in all_significant.items():
+    if not df.empty:
+        top = df.head(50).copy()
+        top["Trait"] = trait
+        combined_list.append(top[["Trait","SNP","p","-log10(p)","Pos"]])
+if combined_list:
+    combined_df = pd.concat(combined_list, ignore_index=True)
+    combined_csv = os.path.join(OUT_DIR, "combined_significant_snps.csv")
+    combined_df.to_csv(combined_csv, index=False)
+    print(f"\nCombined significant SNPs saved to: {combined_csv}")
+else:
+    print("\nNo significant SNPs across analyzed traits.")
+
+print(f"\nAll results saved to folder: {OUT_DIR}")
+combined_list = []: Initializes a final list to combine all results.
+
+for trait, df in all_significant.items():: Loops through the summary dictionary we built in the previous step.
+
+if not df.empty:: Checks if there were any significant SNPs for that trait.
+
+top = df.head(50).copy(): Takes the top 50 most significant SNPs.
+
+top["Trait"] = trait: Adds a new column to this small DataFrame to label which trait these SNPs are associated with.
+
+combined_df = pd.concat(combined_list, ...): pd.concat is a powerful function that stacks all the individual DataFrames in combined_list on top of each other, creating one master file of all top hits.
+
+combined_df.to_csv(...): Saves this final summary file.
+
+else: print(...): This is the line that will likely run in your script due to the simulation issue. It will print "No significant SNPs across analyzed traits."
